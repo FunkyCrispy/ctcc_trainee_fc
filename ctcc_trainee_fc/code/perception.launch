@@ -1,0 +1,34 @@
+<launch>
+
+  <!-- Choose scenario-->
+  <arg name="scenario" default="0000"/>
+
+  <!-- Choose replay speed -->
+  <arg name="speed" default="0.5"/>
+
+  <!-- Choose replay delay -->
+  <arg name="delay" default="3" />
+  
+  <arg name = "play_rosbag" default = "1"/>
+  <arg name = "run_sensor_processing" default = "1"/>
+
+  <!-- Play rosbag file -->
+  <group if="$(arg play_rosbag)">
+      <node pkg="rosbag" type="play" name="player" args="-l -r $(arg speed) -d $(arg delay) --clock $(find sensor_img_processing)/bag/ue09_2021-07-26_filter.bag">
+
+      </node>
+  </group>
+  
+  <!-- Run the sensor setup node -->
+  <group if="$(arg run_sensor_processing)">
+    <node pkg="sensor_img_processing" type="sensor_setup" name="sensor_setup_node" output="screen">
+
+    <!-- Get parameters from parameter.yaml file -->
+      <rosparam file="$(find sensor_img_processing)/config/parameters.yaml" command="load" />
+
+    <!-- Get scenario identifier -->
+    <param name="scenario" value="$(arg scenario)" />
+    </node>
+  </group>
+
+</launch>

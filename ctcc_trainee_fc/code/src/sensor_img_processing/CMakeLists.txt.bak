@@ -1,0 +1,77 @@
+cmake_minimum_required(VERSION  3.5.1)
+project(sensor_processing)
+
+## Compile as C++11, supported in ROS Kinetic and newer
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+add_compile_options(-std=c++14)
+
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_BUILD_TYPE "Release")
+
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  rospy
+  std_msgs
+  cv_bridge
+  pcl_ros
+  nav_msgs
+  helper
+)
+
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+
+set(TORCH_CXX_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0")
+set(Torch_DIR libtorch/share/cmake/Torch)
+find_package(Torch PATHS ${Torch_DIR} NO_DEFAULT REQUIRED)
+if (Torch_FOUND)
+    message(STATUS "Torch library found!")
+    message(STATUS "include path: ${TORCH_INCLUDE_DIRS}" \n)
+else ()
+    message(FATAL_ERROR "Could not locate Torch" \n)
+endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+
+catkin_package(
+  CATKIN_DEPENDS roscpp rospy std_msgs
+  DEPENDS
+  LIBRARIES ${PROJECT_NAME}
+)
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${helper_INCLUDE_DIRS}
+  ${TORCH_INCLUDE_DIRS}
+  /usr/local/cuda-10.2/include
+)
+
+## Declare a C++ library
+file(GLOB_RECURSE ALL_SRCS "src/sensor_processing_lib/*.cpp")
+
+# Sensor setup node
+add_executable(sensor_setup src/sensor_setup_node.cpp ${ALL_SRCS})
+add_dependencies(sensor_setup ${catkin_EXPORTED_TARGETS})
+target_link_libraries( sensor_setup ${catkin_LIBRARIES} ${OpenCV_LIBS} ${Torch_LIBRARIES})
+
+#install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
+#install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
+### Mark other files for installation (e.g. launch and bag files, etc.)
+#install(FILES
+#    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+#)
+#install(TARGETS
+#  sensor_setup
+#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)

@@ -1,0 +1,7 @@
+
+image:
+  width: 640
+  height: 360
+  is_gpu: true
+  conf_thres: 0.5
+  iou_thres: 0.5
